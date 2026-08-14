@@ -8,5 +8,6 @@ new Phaser.Game({
   pixelArt: true,
   zoom: 2,
   backgroundColor: '#1a1a1a',
+  render: { preserveDrawingBuffer: true },
   scene: [ViewerScene, IndexScene]
 });
