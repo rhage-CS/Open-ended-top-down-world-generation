@@ -61,3 +61,5 @@ with an explanation is more useful than a filled region that is wrong.
 If placing indices one at a time becomes tedious, you may write composition
 helpers into the generator. Document any helper you add in this file under a
 "Helpers" heading, with what it does and why you needed it.
+
+Tiny Town's tilemap_packed.png has zero spacing despite Kenney's Tilesheet.txt claiming 1px. Load with spacing: 0. Always verify frame count against image dimensions before trusting tile indices — a wrong spacing value still renders plausible-looking output.
