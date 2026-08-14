@@ -1,4 +1,5 @@
 import ViewerScene from './ViewerScene.js';
+import IndexScene from './IndexScene.js';
 
 new Phaser.Game({
   type: Phaser.AUTO,
@@ -7,5 +8,5 @@ new Phaser.Game({
   pixelArt: true,
   zoom: 2,
   backgroundColor: '#1a1a1a',
-  scene: [ViewerScene]
+  scene: [ViewerScene, IndexScene]
 });

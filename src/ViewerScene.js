@@ -17,11 +17,49 @@ export default class ViewerScene extends Phaser.Scene {
         tileHeight: level.tileSize
       });
       // margin 0, spacing 1 — Kenney packs tiles on a 17px grid
-      const tiles = map.addTilesetImage('tinytown', 'tinytown', 16, 16, 0, 1);
+      const tiles = map.addTilesetImage('tinytown', 'tinytown', 16, 16, 0, 0);
       map.createLayer(0, tiles, 0, 0).setDepth(i);
     });
 
     this.cursors = this.input.keyboard.createCursorKeys();
+    
+    // S key for screenshot capture
+    this.input.keyboard.on('keydown-S', () => {
+      this.captureScreenshot();
+    });
+    
+    // I key to toggle to IndexScene
+    this.input.keyboard.on('keydown-I', () => {
+      this.scene.start('IndexScene');
+    });
+  }
+
+  async captureScreenshot() {
+    try {
+      const canvas = this.game.canvas;
+      const dataURL = canvas.toDataURL('image/png');
+      const base64Data = dataURL.split(',')[1];
+      const binaryString = atob(base64Data);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      
+      const response = await fetch('/capture', {
+        method: 'POST',
+        headers: { 'Content-Type': 'image/png' },
+        body: bytes.buffer
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log(`Screenshot saved: ${result.filename}`);
+      } else {
+        console.error('Screenshot failed:', await response.text());
+      }
+    } catch (err) {
+      console.error('Screenshot error:', err);
+    }
   }
 
   update() {
