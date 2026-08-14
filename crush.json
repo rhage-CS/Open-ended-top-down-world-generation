@@ -1,0 +1,16 @@
+{
+  "mcp": {
+    "pixellab": {
+      "type": "http",
+      "url": "https://api.pixellab.ai/mcp",
+      "headers": {
+        "Authorization": "Bearer $PIXELLAB_API_KEY"
+      },
+      "timeout": 120,
+      "disabled": false
+    }
+  },
+  "options": {
+    "context_paths": ["AGENTS.md", "STYLE.md", "TINYTOWN.md"]
+  }
+}
