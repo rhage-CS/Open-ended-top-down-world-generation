@@ -6,7 +6,7 @@ export default class ViewerScene extends Phaser.Scene {
   preload() {
     this.load.image('tinytown', 'assets/tilemap_packed.png');
     // Phase 3: this.load.image('custom', 'assets/custom_packed.png');
-    this.load.json('level', 'levels/reference_scene.json');
+    this.load.json('level', 'levels/full_map.json');
   }
 
   create() {
