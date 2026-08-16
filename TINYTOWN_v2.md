@@ -425,21 +425,28 @@ Separate from the enclosure. A three-tile vertical run.
 
 ---
 
-## UNRESOLVED CONFLICT — two fence systems, or one misindexed
+## RESOLVED — the sheet contains two distinct fence systems
 
 The fence pieces at (3,8), (3,9), (3,10) and the "posts, rails, sign" pieces at (6,8), (6,9),
 (6,10) have near-identical recorded descriptions: post with rail extending right, horizontal
 rail at y=5-12 full width, post with rail extending left. Both sets are orange-ramp only with
 primary outline. Both record an exact horizontal mirror between the left and right piece.
+This raised the possibility that one of the two passes was misindexed by three rows.
 
-Either the sheet genuinely contains two similar fence systems in rows 3-5 and row 6, or one
-of the two passes is misindexed by three rows.
+**VERIFIED by direct pixel diff — they are distinct tiles, and both region entries stand:**
 
-**This has not been resolved and must be before the probe runs.** The check is a direct pixel
-diff of (3,8) against (6,8) and (3,10) against (6,10). If they are identical or near-identical,
-one region entry is wrong and the dictionary contains a duplicate. If they differ
-substantially, both entries stand and the sheet has two fence idioms, which is itself worth
-stating explicitly so an agent does not mix them.
+| pair | diff px |
+| --- | --- |
+| (3,8) vs (6,8) | 37/256 |
+| (3,9) vs (6,9) | 62/256 |
+| (3,10) vs (6,10) | 37/256 |
+
+The two end pieces differ by an identical amount and the straight rail by more, which is the
+signature of two genuinely different idioms sharing a silhouette, not of a duplicate.
+
+**This is a trap, not a curiosity.** Two orange-ramp fence systems with matching descriptions
+is precisely the situation in which an agent draws pieces from both and produces a run that
+looks almost right. See composition rule 15. Evidence: `tools/diff_tiles.py`.
 
 ---
 
@@ -448,7 +455,7 @@ stating explicitly so an agent does not mix them.
 Transparent ground, outlined on all exposed edges, orange ramp only.
 Post cross-section is `##oooo##` at x=4-11 in all post pieces.
 
-**Subject to the conflict above.**
+**A separate system from the rows 3-5 enclosure.** Do not mix the two.
 
 | (row,col) | idx | tile |
 | --- | --- | --- |
@@ -513,19 +520,17 @@ accent as a handle rather than a small pane.
   texture instead of ground. Doors and windows are **not** interchangeable inserts.
 - Double doors must be placed as an adjacent pair, left leaf then right leaf.
 
-### HYPOTHESIS — the roof region caps this facade
+### The roof region does NOT cap this facade — falsified, see corrections
 
-Rows 4-5 cols 0-7 and rows 6-7 cols 0-7 occupy the same columns and split into two variants at
-the same column boundary. Row 5's bottom edge is a **wall top edge**, and the wall material
-matches the facade beneath it in both cases: variant A's wood wall over the orange facade at
-cols 0-3, variant B's blue-grey wall over the blue facade at cols 4-7.
+Rows 4-5 and rows 6-7 occupy the same columns and split into variants at the same column
+boundary, which suggested they might form one 4-tile-tall building system. **They do not.**
 
-If this holds, rows 4-7 cols 0-7 are one building system 4 tiles tall, and the roof/facade
-colourway pairing is fixed rather than free.
+**VERIFIED:** comparing (5,c) row 15 against (6,c) row 0 for c in 0-7 gives 14, 16, 14, 7, 14,
+16, 14, 7 mismatches out of 16. These rows do not abut. The roof at rows 4-5 and the facade at
+rows 6-7 are independent systems that happen to share a column layout.
 
-**Not verified.** The check is whether (5,c) row 15 abuts (6,c) row 0 without a seam, for
-c in 0-7. Run it before relying on the pairing. If it holds, add it as a composition rule and
-resolve the open item about a missing orange counterpart.
+Cols 3 and 7 score 7 rather than 14 because those are the gable-peak tiles (5,3) and (5,7);
+the partial match is chevron geometry coinciding, not evidence of a seam.
 
 ---
 
@@ -712,6 +717,11 @@ group them with anything by exact colour identity.**
     variant throughout.
 14. **Fence enclosure integrity.** A closed pen is the 3x3 block at rows 3-5, cols 8-10, with
     (5,9) as the gate. Corner pieces must match their declared connections or the run dangles.
+15. **Fence system purity.** The sheet has two distinct fence systems: the enclosure at
+    rows 3-5 cols 8-10, and the posts-and-rails at row 6 cols 8-11. They share the orange ramp
+    and a similar silhouette but are not interchangeable. A single fence run must draw from one
+    system throughout. Mixing them produces a run that reads as almost-correct, which is worse
+    than an obvious break because it survives casual inspection.
 
 ---
 
@@ -739,15 +749,35 @@ wrong. Pixel inspection is sufficient for structure and insufficient for identit
 three inspection methods with distinct failure modes: priors alone get the category wrong,
 pixels get the structure right and the category under-specified, rendering settles it.
 
+### A fourth failure mode: structural inference
+
+One claim in this file was produced by none of those three methods and was wrong.
+
+Rows 4-5 and rows 6-7 occupy the same columns, split into two variants at the same column
+boundary, and row 5's bottom edge was labelled "wall top edge" in a material that matched the
+facade beneath it. From those three facts I inferred that rows 4-7 formed a single building
+system. Every input fact was correct and independently verified. The inference from them was
+not, and a direct seam test falsified it immediately: 14 to 16 mismatches out of 16 on every
+column.
+
+This is a distinct error class from the other three. Priors get the category wrong, pixels
+under-specify it, rendering settles it — but **structural inference invents relationships
+between correctly-labelled regions**, and neither pixel inspection nor rendering a single
+region will catch it, because nothing about either region is wrong. Only a test aimed at the
+claimed relationship exposes it.
+
+It is also the failure mode most likely to appear in the probe. An agent given a correct
+dictionary and asked to compose a scene is doing exactly this kind of inference, and its
+mistakes will look like confident, well-formed structures built on relationships that were
+never in the sheet. Worth watching for specifically when scoring the three conditions, since
+a low violation count does not rule it out.
+
 ---
 
 ## Open items
 
-- **UNRESOLVED CONFLICT:** rows 3-5 fence vs row 6 posts-and-rails. Pixel-diff (3,8) against
-  (6,8) before running the probe. See the dedicated section above.
 - **(5,3) and (5,7)** gable-peak identity is unverified. Geometry certain, category READS AS.
-- **The roof/facade stacking hypothesis** at rows 4-7 cols 0-7 is unverified. Run the seam
-  check described in the facade section.
+  This is now the only open identity question in a region that is otherwise fully resolved.
 - **(7,9) and (7,10)** have no supported identity. Geometry logged, category deliberately blank.
 - **(10,8)** identity unresolved.
 - The horizontal light band at y=11-12 on facade tiles has a described geometry but no
@@ -756,3 +786,8 @@ pixels get the structure right and the category under-specified, rendering settl
   Rows 0-5 are now authored and contain no orange assembly. The second colourway of the
   rows 4-5 roof is roof-red, not orange. The orange ramp appears there only as wall material
   in variant A.
+- **RESOLVED:** "rows 3-5 fence vs row 6 posts-and-rails, duplicate or two systems."
+  Two systems. Pixel diff 37/62/37 out of 256. Both region entries stand. See rule 15.
+- **RESOLVED:** "does the rows 4-5 roof cap the rows 6-7 facade." No. Seam test gives 14-16
+  mismatches out of 16 on every column. Independent systems. Logged as the fourth failure
+  mode in corrections.
