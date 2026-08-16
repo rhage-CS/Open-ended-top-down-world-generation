@@ -1,9 +1,11 @@
+import { captureScreenshot } from './capture.js';
+
 export default class IndexScene extends Phaser.Scene {
   constructor() { super('IndexScene'); }
 
   preload() {
     this.load.spritesheet('tiles', 'assets/tilemap_packed.png',
-  { frameWidth: 16, frameHeight: 16, spacing: 0 });
+      { frameWidth: 16, frameHeight: 16, spacing: 0 });
   }
 
   create() {
@@ -33,6 +35,11 @@ export default class IndexScene extends Phaser.Scene {
         padding: { x: 3, y: 2 }
       }).setOrigin(0.5, 0);
     }
+
+    // S key for screenshot capture
+    this.input.keyboard.on('keydown-S', () => {
+      captureScreenshot(this);
+    });
 
     // I key to toggle back to ViewerScene
     this.input.keyboard.on('keydown-I', () => {
