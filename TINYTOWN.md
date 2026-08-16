@@ -1,3 +1,17 @@
+> **WARNING: This file contains systematic errors and MUST NOT be used to author levels.**
+>
+> Verified wrong classifications:
+> - Indices 3–11 are trees/conifers, not dirt path variants
+> - Indices 48–67 are roofs, not brick/stone walls
+> - Indices 72–91 are walls, not doors or roof pieces
+> - Indices 96–107 are castle wall sections, not fences
+>
+> Root cause: tile indices are a row-major flattening of a 2D sheet layout. Categories that occupy column blocks in the source sheet appear as discontinuous index fragments when read linearly. For example, fence pieces are scattered across roughly indices 44–47, 56–59, 68–71, 80–83 rather than forming a contiguous run.
+>
+> See `PHASE1_FINDINGS.md` for the full analysis of this failure mode.
+>
+> `TINYTOWN_v2.md` is the authoritative version once written.
+
 # Tiny Town Tileset Reference
 
 Source: `screenshots/screenshot_002.png` — Kenney's Tiny Town tilemap_packed.png, 16×16 tiles on a 17px grid (spacing: 0 in Phaser).
