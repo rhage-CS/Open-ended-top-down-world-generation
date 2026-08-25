@@ -68,19 +68,28 @@ grass.
 
 ## Frozen task spec
 
-Identical text in every condition. Do not reword it between runs.
-
 > Compose a top-down town scene on a 24x16 grid using the Kenney Tiny Town
-> tileset. The scene must contain:
+> tileset.
 >
-> - ground under the whole scene. Empty is -1; tile index 0 is grass fill
-> - two buildings in different colourways, each with a ground-level door
-> - at least one roof run from rows 4-5, complete from left edge to right edge
-> - one building with an open archway rather than a door
+> Ground first. Every cell of the 24x16 grid that is not occupied by a
+> structure or object must contain a terrain tile. Grass fill is index 0,
+> dirt fill is index 25. No cell may be left as -1.
+>
+> The scene must then contain:
+>
+> - two buildings in different colourways, each with a ground-level door,
+>   one of which uses the double-door pair
+> - at least one complete roof run using tile indices 48-67, running from a
+>   left-edge tile through to a right-edge tile
+> - one stone arch, placed as a matched pair
 > - a closed fence enclosure
+> - one rail fence section, terminating in posts at both ends
+> - one structure using the large assembly tiles
 > - a well
 > - a signpost
-> - at least six props
+> - at least one tree group from the block-locked 3x3 tree region
+> - a dirt path of at least six tiles, using the terrain transition tiles
+>   where dirt meets grass
 >
 > Use any tile index from 0 to 131. Write the result to the path given.
 
