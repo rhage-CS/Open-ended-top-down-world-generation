@@ -9,17 +9,28 @@
  *   node tools/validate.js levels/scene.json --json           machine-readable
  *   node tools/validate.js levels/scene.json --scope=71-131   restrict range
  *   node tools/validate.js levels/scene.json --zero=tile      0 means grass, not empty
+ *   node tools/validate.js levels/scene.json --layer=objects  pick a layer by name
  *   node tools/validate.js --selftest                         check the checker
+ *
+ * RULE COUNT: fourteen composition rules, plus `scope`, which is a validity
+ * check rather than a composition rule. Rule labels below run R0-R15 with no
+ * R10, which is why the label range and the rule count disagree. When quoting
+ * a total anywhere, quote fourteen.
  *
  * ZERO WARNING: the grass fill is index 0 and Tiled uses 0 for "empty". By
  * default 0 is read as empty. If your scene uses raw indices and has grass
  * ground, pass --zero=tile or every ground tile is dropped before validation.
  *
+ * LAYERS: every rule concerns objects, so a two-layer scene must be validated
+ * against its objects layer. A layer literally named "objects" is preferred;
+ * otherwise the topmost layer with data wins, which is the convention the
+ * viewer also uses (ground first, objects above). Pass --layer= to override.
+ *
  * SCOPE: the dictionary now covers 0-131, so the default scope is the full
  * sheet. Earlier probe runs were restricted to 71-131 because rows 0-5 were
  * unlabelled and no ground tile existed. Pass --scope=71-131 to reproduce those
- * runs. Note that under that restriction rules 11-15 are unreachable, since
- * every tile they govern is below index 71.
+ * runs. Note that under that restriction the roof and fence rules (R11-R15) are
+ * unreachable, since every tile they govern is below index 71.
  *
  * TILED GID WARNING: Tiled writes 1-based gids with 0 meaning empty, so a tile
  * with index 85 is stored as 86. Pass --offset=-1 to correct. If your first run
@@ -73,7 +84,7 @@ const ASSEMBLY  = new Set([...ASM_LEFT, ...ASM_RIGHT, ...ASM_MID]);
 // --- Roof, rows 4-5 cols 0-7 -----------------------------------------------
 // Variant A: blue-grey roof over wood wall.  Variant B: roof-red over blue-grey
 // wall. Related by the two-ramp shift, so the SAME blue-grey RGB values are the
-// roof in A and the wall in B. That is what rule 13 exists to catch.
+// roof in A and the wall in B. That is what R13 exists to catch.
 
 const ROOF_A = new Set([48, 49, 50, 51, 60, 61, 62, 63]);
 const ROOF_B = new Set([52, 53, 54, 55, 64, 65, 66, 67]);
@@ -124,7 +135,27 @@ const EMPTY_BASE = new Set([-1, null, undefined]);
 // Grid loading
 // ---------------------------------------------------------------------------
 
-function loadGrid(path, offset, zeroIsTile = false) {
+/**
+ * Choose which layer the rules run over.
+ *
+ * Every rule concerns objects. A two-layer scene is ground-then-objects, so
+ * the topmost layer is the right default — but that is positional, and a file
+ * written with the layers in the other order would silently score its terrain
+ * and report a clean scene full of grass. Prefer the layer named "objects" so
+ * the choice does not depend on array order.
+ */
+function pickLayer(layers, spec) {
+  if (spec) {
+    const byName = layers.find(l => l.name === spec);
+    if (byName) return byName;
+    const idx = Number(spec);
+    if (Number.isInteger(idx) && layers[idx]) return layers[idx];
+    throw new Error(`No layer matching --layer=${spec}. Available: ${layers.map(l => l.name).join(', ')}`);
+  }
+  return layers.find(l => l.name === 'objects') || layers[layers.length - 1];
+}
+
+function loadGrid(path, offset, zeroIsTile = false, layerSpec = null) {
   const raw = JSON.parse(fs.readFileSync(path, 'utf8'));
   let data, width, height;
 
@@ -132,15 +163,9 @@ function loadGrid(path, offset, zeroIsTile = false) {
     return raw.map(r => r.map(v => applyOffset(v, offset, zeroIsTile)));
   }
   if (raw.layers && raw.layers.length) {
-    // Multi-layer scenes put terrain on layer 0 and objects above it. Every
-    // rule concerns objects, so default to the TOPMOST layer. With a
-    // single-layer scene this is the same layer as before.
     const withData = raw.layers.filter(l => Array.isArray(l.data));
-    const pick = process.argv.find(a => a.startsWith('--layer='));
-    const layer = pick
-      ? (withData.find(l => l.name === pick.split('=')[1]) || withData[+pick.split('=')[1]])
-      : withData[withData.length - 1];
-    if (!layer) throw new Error('No layer with a data array.');
+    if (!withData.length) throw new Error('No layer with a data array.');
+    const layer = pickLayer(withData, layerSpec);
     // A layer's data may be a nested 2D array or a flat row-major array.
     if (Array.isArray(layer.data[0])) {
       return layer.data.map(r => r.map(v => applyOffset(v, offset, zeroIsTile)));
@@ -187,7 +212,7 @@ function validate(grid, scope = DEFAULT_SCOPE) {
       const t = at(x, y);
       if (t === -1) continue;
 
-      // R0 — scope
+      // R0 — scope. Validity check, not a composition rule.
       if (t < SCOPE_MIN || t > SCOPE_MAX) {
         add('scope', x, y, `tile ${t} is outside the scope ${SCOPE_MIN}-${SCOPE_MAX}`);
         continue;
@@ -303,7 +328,7 @@ function validate(grid, scope = DEFAULT_SCOPE) {
         add('assembly-edge-interior', x, y, `right-edge tile ${t} has assembly tile ${R} to its right`);
       }
 
-      // R11 — roof colourway purity (v2 rule 11)
+      // R11 — roof colourway purity
       if (ROOF.has(t)) {
         const mine = roofVariant(t);
         for (const [nx, ny, n] of [[x + 1, y, R], [x, y + 1, D]]) {
@@ -316,7 +341,7 @@ function validate(grid, scope = DEFAULT_SCOPE) {
         }
       }
 
-      // R12 — roof run ordering (v2 rule 12)
+      // R12 — roof run ordering
       // left-edge, then zero or more fill/dormer, then right-edge.
       if (ROOF_LEFT_EDGE.has(t) && ROOF.has(L)) {
         add('roof-run-order', x, y, `left-edge roof ${t} has roof tile ${L} to its left`);
@@ -335,7 +360,7 @@ function validate(grid, scope = DEFAULT_SCOPE) {
         }
       }
 
-      // R13 — material-role consistency (v2 rule 13)
+      // R13 — material-role consistency
       // The blue-grey ramp is roof in variant A and wall in variant B. An agent
       // matching on colour will stack an A roof over a B roof and build a
       // house made of two roofs. Vertical roof runs must hold one variant.
@@ -345,7 +370,7 @@ function validate(grid, scope = DEFAULT_SCOPE) {
           `the shared blue-grey ramp is roof in A and wall in B, so this is two roofs, not a roof and a wall`);
       }
 
-      // R14 — fence enclosure integrity (v2 rule 14)
+      // R14 — fence enclosure integrity
       if (FENCE_CONN.has(t)) {
         for (const d of FENCE_CONN.get(t)) {
           const [dx, dy] = DELTA[d];
@@ -359,7 +384,7 @@ function validate(grid, scope = DEFAULT_SCOPE) {
         }
       }
 
-      // R15 — fence system purity (v2 rule 15)
+      // R15 — fence system purity
       // Two orange-ramp fence systems, verified distinct by pixel diff at
       // 37/62/37 out of 256. Similar silhouettes, not interchangeable.
       if (ENCLOSURE.has(t) || RAIL_SYSTEM.has(t)) {
@@ -384,6 +409,13 @@ function validate(grid, scope = DEFAULT_SCOPE) {
 // A clean run here is the only thing that lets you trust a zero score. Every
 // rule must appear in the BAD scene, or a rule that never fires is
 // indistinguishable from a compliant agent.
+//
+// EXPECTED_RULES is the guard on that guard. If a rule exists in the engine but
+// is missing from this list, the selftest reports a pass over a smaller
+// denominator and the omission is invisible. That is exactly what happened to
+// wall-end-interior and assembly-edge-interior: implemented, never listed,
+// never observed to fire. Add a rule to the engine, add it here in the same
+// commit.
 // ---------------------------------------------------------------------------
 
 const E = -1;
@@ -405,19 +437,24 @@ const BAD = [
   [ 72,  86,  85,  85,  75,   E,   E,   E,  64,   E,   E,   E],
   // facade sits under the doors on row 1
   [ 73,  73,   E,   E,   E,   E,   E,   E,   E,   E,   E,   E],
-  // rail unanchored both ends; 48 left-edge with roof 49 to its left
-  [ 96,  97,  98,   E,  81,  81,   E,   E,  49,  48,   E,   E],
+  // rail unanchored both ends; 48 left-edge with roof 49 to its left;
+  // assembly left-edge 96 and right-edge 98 buried inside a run
+  [ 97,  96,  98,  97,  81,  81,   E,   E,  49,  48,   E,   E],
   // 44 abuts rail 81: system mix and a dangling E connection; 51 dormer terminal
   [  E,   E,   E,   E,  44,  81,   E,   E,  51,   E,   E,   E],
   // rock cut-outs mismatched
   [111, 114,   E,   E,   E,   E,   E,   E,   E,   E,   E,   E],
   // well split
   [ 92,   E,   E,   E,   E,   E,   E,   E,   E,   E,   E,   E],
+  // left-end 72 and right-end 75 buried inside a facade run. Same colourway
+  // throughout so R3 stays quiet, and the bottom row so nothing is grounded.
+  [ 73,  72,   E,  75,  73,   E,   E,   E,   E,   E,   E,   E],
 ];
 
 const EXPECTED_RULES = [
-  'colourway-mixed', 'double-door-unpaired', 'door-not-grounded',
-  'rail-unanchored', 'rock-unpaired', 'sign-unmounted', 'well-split',
+  'door-not-grounded', 'double-door-unpaired', 'colourway-mixed',
+  'wall-end-interior', 'rock-unpaired', 'rail-unanchored', 'sign-unmounted',
+  'well-split', 'assembly-edge-interior',
   'roof-colourway-mixed', 'roof-run-order', 'roof-variant-stacked',
   'fence-connection-dangling', 'fence-system-mixed',
 ];
@@ -432,12 +469,18 @@ function selftest() {
 
   const fired = new Set(bad.map(v => v.rule));
   const missing = EXPECTED_RULES.filter(r => !fired.has(r));
-  const badOk = missing.length === 0;
+  const unlisted = [...fired].filter(r => r !== 'scope' && !EXPECTED_RULES.includes(r));
+  const badOk = missing.length === 0 && unlisted.length === 0;
+
   console.log(`BAD scene:  ${bad.length} violation(s) across ${fired.size} rule(s)  ${badOk ? 'PASS' : 'FAIL'}`);
   if (missing.length) console.log(`   rules that failed to fire: ${missing.join(', ')}`);
+  if (unlisted.length) {
+    console.log(`   rules fired but absent from EXPECTED_RULES: ${unlisted.join(', ')}`);
+    console.log('   add them to EXPECTED_RULES — an unlisted rule is never checked for coverage.');
+  }
   bad.forEach(v => console.log(`   [${v.rule}] ${v.x},${v.y} ${v.message}`));
 
-  console.log(`\nrules covered: ${fired.size}/${EXPECTED_RULES.length}`);
+  console.log(`\nrules covered: ${EXPECTED_RULES.filter(r => fired.has(r)).length}/${EXPECTED_RULES.length}`);
   return goodOk && badOk ? 0 : 1;
 }
 
@@ -459,15 +502,17 @@ function main() {
 
   const path = args.find(a => !a.startsWith('--'));
   if (!path) {
-    console.error('usage: node validate.js <level.json> [--json] [--offset=-1] [--scope=MIN-MAX] [--zero=tile]');
+    console.error('usage: node validate.js <level.json> [--json] [--offset=-1] [--scope=MIN-MAX] [--zero=tile] [--layer=NAME]');
     process.exit(2);
   }
   const offsetArg = args.find(a => a.startsWith('--offset='));
   const offset = offsetArg ? parseInt(offsetArg.split('=')[1], 10) : 0;
+  const layerArg = args.find(a => a.startsWith('--layer='));
+  const layerSpec = layerArg ? layerArg.split('=')[1] : null;
   const scope = parseScope(args);
   const zeroIsTile = args.includes('--zero=tile');
 
-  const grid = loadGrid(path, offset, zeroIsTile);
+  const grid = loadGrid(path, offset, zeroIsTile, layerSpec);
   const violations = validate(grid, scope);
 
   if (args.includes('--json')) {
