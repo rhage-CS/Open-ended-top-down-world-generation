@@ -1,0 +1,32 @@
+{
+  "c3f89bed-5caf-4ede-9065-d906369f39cb": {
+    "file": "assets/generated/wooden-market-stall-with-strip-c3f89bed.png",
+    "kind": "objects",
+    "name": "wooden market stall with strip",
+    "prompt": "wooden market stall with striped awning",
+    "size": {
+      "width": 64,
+      "height": 64
+    },
+    "view": "high top-down",
+    "created_at": "2026-08-17T23:21:37.689537+00:00",
+    "source_url": "https://backblaze.pixellab.ai/file/pixellab-characters/objects/88c66e7c-6eca-4fe3-ba22-621fe3b902b4/c3f89bed-5caf-4ede-9065-d906369f39cb/rotations/unknown.png",
+    "sha256": "b898b2cd946de9daee24674760c3286c0032c3d03c50211df6035a18603db3a5",
+    "fetched_at": "2026-08-25T19:14:21.284Z"
+  },
+  "f578c2bc-1406-4189-a614-cc684550cf12": {
+    "file": "assets/generated/wooden-market-stall-with-strip-f578c2bc.png",
+    "kind": "objects",
+    "name": "wooden market stall with strip",
+    "prompt": "wooden market stall with striped awning",
+    "size": {
+      "width": 64,
+      "height": 64
+    },
+    "view": "high top-down",
+    "created_at": "2026-08-17T23:19:05.142188+00:00",
+    "source_url": "https://backblaze.pixellab.ai/file/pixellab-characters/objects/88c66e7c-6eca-4fe3-ba22-621fe3b902b4/f578c2bc-1406-4189-a614-cc684550cf12/rotations/unknown.png",
+    "sha256": "170ee872aeabc6cf765dd38dfcbdbcd2ccc2f3476692982c7c959ce4b4585932",
+    "fetched_at": "2026-08-25T19:14:21.999Z"
+  }
+}

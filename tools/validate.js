@@ -132,7 +132,15 @@ function loadGrid(path, offset, zeroIsTile = false) {
     return raw.map(r => r.map(v => applyOffset(v, offset, zeroIsTile)));
   }
   if (raw.layers && raw.layers.length) {
-    const layer = raw.layers.find(l => Array.isArray(l.data)) || raw.layers[0];
+    // Multi-layer scenes put terrain on layer 0 and objects above it. Every
+    // rule concerns objects, so default to the TOPMOST layer. With a
+    // single-layer scene this is the same layer as before.
+    const withData = raw.layers.filter(l => Array.isArray(l.data));
+    const pick = process.argv.find(a => a.startsWith('--layer='));
+    const layer = pick
+      ? (withData.find(l => l.name === pick.split('=')[1]) || withData[+pick.split('=')[1]])
+      : withData[withData.length - 1];
+    if (!layer) throw new Error('No layer with a data array.');
     // A layer's data may be a nested 2D array or a flat row-major array.
     if (Array.isArray(layer.data[0])) {
       return layer.data.map(r => r.map(v => applyOffset(v, offset, zeroIsTile)));

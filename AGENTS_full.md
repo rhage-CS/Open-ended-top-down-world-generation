@@ -19,6 +19,28 @@ There is no gameplay. The viewer exists so you can see what you are building.
 - Do not add gameplay, entities, physics, or input handling beyond free camera
   movement. If a task seems to require it, stop and ask.
 
+## Tile reference
+
+`TINYTOWN_v2.md` is the **only** authoritative tile dictionary. Read it before
+placing any tile. It is keyed on `(row, col)`, not index ranges, because the
+sheet is authored as 2D spatial regions and index-range grouping fragments them.
+
+The following are archived experimental conditions. They contain labels known to
+be incorrect and must **not** be used as a source of tile facts:
+
+- `TINYTOWN_v0_unlooked.md` — authored from priors, no pixel access
+- `TINYTOWN.md` — authored from an index screenshot, systematically wrong
+- `TINYTOWN_corrections.md` — diagnosis of the above
+
+If a tile you want to use is not in `TINYTOWN_v2.md`, add it there first with
+your reasoning, then use it. If you are guessing, mark the entry READS AS.
+
+## Tile scope
+
+Only indices **71-131** are authored. Indices 0-70 are unlabelled. Do not place
+them. There is currently no ground or terrain tile, so scenes will render on an
+empty background. That is expected, not a bug to work around.
+
 ## Level format
 
 Write levels to `levels/` as:

@@ -14,18 +14,58 @@ structure, count constraint violations.**
 
 ## Protocol version
 
-**v2 — full-sheet.** Supersedes the 71-131 restricted protocol.
+**v2.1 — full-sheet.** Supersedes the 71-131 restricted protocol.
 
 The earlier spec restricted the agent to indices 71-131 because rows 0-5 were
 unauthored and no ground tile existed. Both are now false: `TINYTOWN_v2.md`
 covers 132 of 132 tiles, and the validator carries rules 11-15 governing the
-roof and fence regions in rows 3-5.
+roof and fence regions in tileset rows 3-5.
 
 **Runs made under the restricted protocol are not comparable to runs made under
 this one.** Under 71-131 every tile governed by rules 11-15 is out of scope, so
 five rules could not fire and scores were computed against ten rules, not
 fifteen. Do not pool the two sets. If you want the old numbers, re-run them
 under this spec rather than reusing them.
+
+### Changes from v2
+
+- Rule count and reachability denominator reconciled (see "Rule count" below).
+- No-dictionary arm given an output path, an isolation procedure, and a
+  mandatory void check. The first attempt at this arm was void because the
+  agent copied an existing level file; that is now a checked failure mode
+  rather than something caught by luck.
+- The structural-inference decision is closed rather than left open.
+- Six-run minimum stated as a valid reduced design.
+
+### Note on "rows"
+
+Throughout this file, **"rows" means rows of the tileset sheet**, not rows of
+the output grid. Tileset row = `index // 12`. The output grid is always
+referred to as "the grid" or by explicit coordinates. This distinction has
+caused misreads; keep it.
+
+---
+
+## Rule count
+
+`validate.js` encodes **15 rules**. `census.js` reports reachability over the
+subset of rules that a scene can be constructed to exercise.
+
+**Resolve the denominator before the first run.** Run both:
+
+```bash
+node tools/validate.js --selftest
+node tools/census.js levels/full_map.json --zero=tile
+```
+
+If the census reports `14/14`, one rule is not reachability-testable. Name it
+here, say why, and keep 14 as the threshold. If it reports `15/15`, change every
+threshold in this file to 15/15.
+
+Do not run the conditions until this line reads a single consistent number. A
+scoring rule that disagrees with the instrument is worse than no scoring rule.
+
+**Current threshold: 14/14 — pending confirmation above.**
 
 ---
 
@@ -34,6 +74,7 @@ under this spec rather than reusing them.
 Before any condition runs, the agent must have:
 
 1. `TINYTOWN_v2.md` readable in context. This is the tile dictionary.
+   **Except in the fourth arm**, where it is withheld — see below.
 2. Write access to `levels/`. Output goes to `levels/gen_{condition}_{run}.json`.
 3. Ability to run `node tools/validate.js <path> --json --zero=tile`.
 4. Ability to run the screenshot capture so it can see its own output.
@@ -160,8 +201,9 @@ them from the dictionary.
 >   variant A roof stacked on a variant B roof is two roofs, not a roof and a
 >   wall. Any vertical roof-to-wall transition must hold one variant throughout
 > - a fence piece's declared connections must be met by the neighbouring tile
-> - the sheet has two distinct fence systems, the enclosure at rows 3-5 and the
->   posts-and-rails at row 6. A single run must draw from one system only
+> - the sheet has two distinct fence systems, the enclosure at tileset rows 3-5
+>   and the posts-and-rails at tileset row 6. A single run must draw from one
+>   system only
 >
 > Write levels/gen_styled_{run}.json and run the validator once, at the end,
 > with --zero=tile.
@@ -174,18 +216,56 @@ will show it directly.
 
 ---
 
-## Optional fourth arm — no dictionary
+## Fourth arm — no dictionary
 
-Strongly worth running. Same task spec, same output format, but
-**TINYTOWN_v2.md is withheld.** The agent gets only the tileset image.
+Not optional. This is the arm that answers the research question. Conditions 1-3
+measure prompting strategy with knowledge held constant. This one measures what
+the knowledge is worth.
 
-This is the arm that actually answers the research question. Conditions 1-3
-measure prompting strategy with knowledge held constant. This one measures
-what the knowledge is worth.
+Same task spec, same output format. **`TINYTOWN_v2.md` is withheld.** The agent
+gets only the tileset image.
+
+Output path: `levels/gen_nodict_{run}.json`.
 
 Expect this arm to fail the element list, not just the rules. Score it anyway
 and record which elements were absent, since "could not find the roof tiles"
 is a different failure from "found them and placed them wrongly".
+
+### Isolation procedure — run this before every no-dictionary run
+
+The first attempt at this arm was void: the agent emitted a byte-identical copy
+of `gen_planned_3.json` rather than composing a scene. It scored zero violations
+and would have been recorded as a clean result. It was caught only because the
+file contents were noticed to be identical.
+
+An agent denied the information it needs will look for it elsewhere in the
+working tree. Assume this rather than hoping otherwise.
+
+Before each no-dictionary run:
+
+1. Move every prior output out of the tree the agent can read:
+   `mv levels/gen_*.json levels/_done/`
+2. Move the dictionary and the corrections log out of reach:
+   `mv TINYTOWN_v2.md TINYTOWN_corrections.md ../_withheld/`
+   Also confirm `TINYTOWN.md` and `TINYTOWN_v0_unlooked.md` are out of reach —
+   v1 is wrong, but it is still a dictionary.
+3. Confirm `levels/full_map.json` and `levels/reference_scene.json` are out of
+   reach. The baseline is a worked answer.
+4. Record the tree state: `ls -R levels/ *.md > runs/nodict_{run}_tree.txt`
+
+### Void check — run this on every output, every arm
+
+```bash
+shasum -a 256 levels/gen_*.json levels/_done/*.json
+```
+
+**Any output whose hash matches another level file is void.** Record it as void
+with the matching filename, do not score it, and re-run. This applies to every
+condition, not just the fourth arm — a condition 2 run that duplicates a
+condition 1 run is the same failure.
+
+Also check file mtimes. An output written implausibly fast relative to the tool
+call log did not involve composition.
 
 ---
 
@@ -193,8 +273,14 @@ is a different failure from "found them and placed them wrongly".
 
 - 3 runs per condition, fresh context each time. Prompt variance is large;
   a single run per condition tells you nothing.
+- **Reduced design, if time is short: 3 runs of condition 2 and 3 runs of the
+  no-dictionary arm.** Six runs, roughly 90 minutes. This answers the primary
+  question — what the dictionary is worth — and drops the secondary question
+  about prompting style. Prefer this over twelve rushed runs. Record which
+  design was used.
 - Same model, same settings, across all runs.
 - Do not hand-edit the agent's output before scoring.
+- Run the void check before scoring anything.
 - Score every run with **both** tools:
 
 ```bash
@@ -203,18 +289,25 @@ node tools/census.js   levels/gen_{cond}_{run}.json --zero=tile
 ```
 
 - Record for each run: total violations, per-rule counts, **rules reachable**,
-  distinct tile count, wall-clock time, number of tool calls.
+  distinct tile count, placed tile count, wall-clock time, number of tool calls.
 
 ### The census is not optional
 
-A run that scores zero because it satisfied fifteen rules and a run that scores
+A run that scores zero because it satisfied every rule and a run that scores
 zero because it placed no roof are the same number. The census separates them.
 
-**Scoring rule: a run with fewer than 14/14 rules reachable is reported as
+**Scoring rule: a run below the reachability threshold is reported as
 incomplete, not as clean.** Its violation count goes in the table with the
 reachability figure beside it, and it is not averaged in with complete runs.
 Without this, the easiest way for an agent to score well is to build less,
 and the measure rewards exactly the behaviour it should penalise.
+
+### Placed tile count is a required measure
+
+The three planned runs scored zero violations each while placing 73, 53 and 51
+tiles. The scores were identical and the scenes were not. Reachability caught
+none of this because all three cleared the threshold. Record the placed count
+on every run and report it beside the violation count.
 
 ---
 
@@ -230,6 +323,7 @@ reachable from `census.js`. Neither number means anything alone.
 - whether the agent used the validator unprompted in conditions 2 and 3
 - tile diversity: how many distinct indices appear. A scene with zero
   violations built from four tile types is technically clean and useless
+- placed tile count
 - element completeness: which required elements are present at all
 
 ---
@@ -254,43 +348,45 @@ pixels, rendering) concern getting a single region wrong. The fourth is
 different: **inventing a relationship between two regions that are each
 correctly labelled.**
 
-The worked example is in the dictionary. Rows 4-5 and rows 6-7 occupy the same
-columns, split into variants at the same column boundary, and row 5's bottom
-edge is a wall in a material matching the facade beneath. Every one of those
-facts is true and independently verified. The inference that they form one
+The worked example is in the dictionary. Tileset rows 4-5 and rows 6-7 occupy
+the same columns, split into variants at the same column boundary, and row 5's
+bottom edge is a wall in a material matching the facade beneath. Every one of
+those facts is true and independently verified. The inference that they form one
 building is false, and a seam test falsified it at 14 to 16 mismatches out of 16
 on every column.
 
 Composing a scene is exactly this kind of inference. An agent handed a correct
 dictionary will produce confident, well-formed structures resting on
-relationships that were never in the sheet, and **those scenes are adjacency-clean
-and will score zero.** Every rule in `validate.js` is a local adjacency check.
-None of them can see this.
+relationships that were never in the sheet, and **those scenes are
+adjacency-clean and will score zero.** Every rule in `validate.js` is a local
+adjacency check. None of them can see this.
 
-**Decide before running, not after.** Two options:
+**Decision: do both, and report them separately.**
 
-1. Encode the known-independent facts as rules. The rows 4-5 roof does not cap
-   the rows 6-7 facade; the two fence systems are separate; the two roof idioms
-   (rows 4-5 and rows 8-10) are separate. This catches the specific inferences
-   already falsified, and nothing else.
-2. Read every output scene by hand against a written checklist, and report the
-   count separately from the validator score.
+1. Encode the three known-independent facts as rules: the rows 4-5 roof does not
+   cap the rows 6-7 facade; the two fence systems are separate; the two roof
+   idioms (rows 4-5 and rows 8-10) are separate. Narrow by design — it catches
+   only inferences already falsified.
+2. Read every output scene by hand against a written checklist. Report the count
+   in its own column, never folded into the validator score.
 
-Option 1 is narrower than it looks, because it only catches inferences already
-known to be wrong, and the interesting failures will be new ones. Option 2 scales
-badly but is the only thing that catches novel cases. Doing both is defensible.
-Doing neither, and then reading three conditions scoring near zero as success,
-is the failure this section exists to prevent.
+Option 1 alone catches nothing new, and the interesting failures will be new
+ones. Option 2 alone scales badly but is the only thing that sees novel cases.
+Reading three conditions scoring near zero as success, without either, is the
+failure this section exists to prevent.
+
+The hand-read checklist lives in `runs/checklist.md` and is written before the
+first run, not after seeing the outputs.
 
 ---
 
 ## Baseline
 
-`levels/full_map.json` is hand-authored and scores **0 violations with 14/14
-rules reachable**. Both halves matter:
+`levels/full_map.json` is hand-authored and scores **0 violations at the full
+reachability threshold**. Both halves matter:
 
 - `--selftest` proves each rule *can* fire
-- the baseline proves all fifteen can be satisfied *simultaneously*
+- the baseline proves all of them can be satisfied *simultaneously*
 
 Together they are what makes a zero from an agent meaningful. Any condition
 scoring above 0 is failing a task known to be achievable rather than an
@@ -304,4 +400,4 @@ architectural sense, so as an exemplar it would model the floating-structure
 error the measure already cannot see.
 
 If you do decide to expose it, move the roof runs so they cap an actual facade
-first, re-verify at 0 violations and 14/14, and note the change here.
+first, re-verify at 0 violations and full reachability, and note the change here.

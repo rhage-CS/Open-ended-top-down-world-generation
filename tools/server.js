@@ -42,6 +42,7 @@ function serveStaticFile(res, filePath) {
 }
 
 const server = http.createServer((req, res) => {
+  const pathname = req.url.split('?')[0];
   // POST /capture
   if (req.method === 'POST' && req.url === '/capture') {
     let body = [];
@@ -91,7 +92,7 @@ const server = http.createServer((req, res) => {
 
   // GET — serve static files from project root
   if (req.method === 'GET') {
-    let filePath = path.join(PROJECT_ROOT, req.url === '/' ? 'index.html' : req.url);
+    let filePath = path.join(PROJECT_ROOT, pathname === '/' ? 'index.html' : pathname);
 
     // Security: prevent directory traversal
     if (!filePath.startsWith(PROJECT_ROOT)) {

@@ -12,6 +12,6 @@
     }
   },
   "options": {
-    "context_paths": ["AGENTS.md", "STYLE.md", "PHASE1_FINDINGS.md"]
+    "context_paths": ["AGENTS.md", "STYLE.md"]
   }
 }
