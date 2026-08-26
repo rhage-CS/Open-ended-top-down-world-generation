@@ -1,0 +1,272 @@
+{
+  "tileset_id": "78aad0fe-f2d3-47df-aaa4-08467afefefd",
+  "source": "https://api.pixellab.ai/v2/tilesets/78aad0fe-f2d3-47df-aaa4-08467afefefd",
+  "fetched_at": "2026-08-25T22:02:36.034Z",
+  "tile_size": {
+    "width": 16,
+    "height": 16
+  },
+  "total_tiles": 16,
+  "terrain_types": [
+    "lower",
+    "upper"
+  ],
+  "tiles": [
+    {
+      "id": "13",
+      "name": "wang_13",
+      "file": "tile_13.png",
+      "corners": {
+        "NW": "upper",
+        "NE": "upper",
+        "SW": "lower",
+        "SE": "upper"
+      },
+      "signature": "UULU",
+      "reading": "upper with one lower corner — inner corner",
+      "row": 4,
+      "col": 2,
+      "sha256": "5372841cc131947e9427fbedfa06f3939999ea3cb1f8ffeef83c24582b477bf2"
+    },
+    {
+      "id": "10",
+      "name": "wang_10",
+      "file": "tile_10.png",
+      "corners": {
+        "NW": "upper",
+        "NE": "lower",
+        "SW": "upper",
+        "SE": "lower"
+      },
+      "signature": "ULUL",
+      "reading": "upper left, lower right — vertical edge",
+      "row": 2,
+      "col": 6,
+      "sha256": "c430e41de9f18dd052a28f4472d96dcb15ddbc39251d723f8d3d7a2ff74d8fb9"
+    },
+    {
+      "id": "4",
+      "name": "wang_4",
+      "file": "tile_04.png",
+      "corners": {
+        "NW": "lower",
+        "NE": "upper",
+        "SW": "lower",
+        "SE": "lower"
+      },
+      "signature": "LULL",
+      "reading": "lower with one upper corner — outer corner",
+      "row": 4,
+      "col": 1,
+      "sha256": "951bf753b8f9c6cdf42326d6355cc59c0fc257051eaf010905ffc47791c5339d"
+    },
+    {
+      "id": "12",
+      "name": "wang_12",
+      "file": "tile_12.png",
+      "corners": {
+        "NW": "upper",
+        "NE": "upper",
+        "SW": "lower",
+        "SE": "lower"
+      },
+      "signature": "UULL",
+      "reading": "upper above, lower below — horizontal edge",
+      "row": 3,
+      "col": 5,
+      "sha256": "0b0894e503c81e953f5f65a5b10f2e4c555bdcf7f5f8f62da74ce01dbfb1f776"
+    },
+    {
+      "id": "6",
+      "name": "wang_6",
+      "file": "tile_06.png",
+      "corners": {
+        "NW": "lower",
+        "NE": "upper",
+        "SW": "upper",
+        "SE": "lower"
+      },
+      "signature": "LUUL",
+      "reading": "diagonal split",
+      "row": 5,
+      "col": 2,
+      "sha256": "9fb4e012fc05cff22791c9ea4719c78b77117c609b38b7a41e10f5e255e783ea"
+    },
+    {
+      "id": "8",
+      "name": "wang_8",
+      "file": "tile_08.png",
+      "corners": {
+        "NW": "upper",
+        "NE": "lower",
+        "SW": "lower",
+        "SE": "lower"
+      },
+      "signature": "ULLL",
+      "reading": "lower with one upper corner — outer corner",
+      "row": 3,
+      "col": 6,
+      "sha256": "8de3d29476d5a4dde161f8fbe4ebbb750c81619877b310a30f5e27b7bf06eca3"
+    },
+    {
+      "id": "0",
+      "name": "wang_0",
+      "file": "tile_00.png",
+      "corners": {
+        "NW": "lower",
+        "NE": "lower",
+        "SW": "lower",
+        "SE": "lower"
+      },
+      "signature": "LLLL",
+      "reading": "solid lower terrain — interior fill",
+      "row": 6,
+      "col": 3,
+      "sha256": "1ce48ce9698d15493f388ecaa9b21bb4b69188d28a1bc120b338d01d278292b5"
+    },
+    {
+      "id": "1",
+      "name": "wang_1",
+      "file": "tile_01.png",
+      "corners": {
+        "NW": "lower",
+        "NE": "lower",
+        "SW": "lower",
+        "SE": "upper"
+      },
+      "signature": "LLLU",
+      "reading": "lower with one upper corner — outer corner",
+      "row": 1,
+      "col": 1,
+      "sha256": "ee83ddca01a227e8346bd217d2c5d3383a951535045400c5a3391dd786f53984"
+    },
+    {
+      "id": "11",
+      "name": "wang_11",
+      "file": "tile_11.png",
+      "corners": {
+        "NW": "upper",
+        "NE": "lower",
+        "SW": "upper",
+        "SE": "upper"
+      },
+      "signature": "ULUU",
+      "reading": "upper with one lower corner — inner corner",
+      "row": 2,
+      "col": 3,
+      "sha256": "c9f4e639bd2cb65ec055db8944ea6e6bb18e4782100f400488a4d95df7d0a2ee"
+    },
+    {
+      "id": "3",
+      "name": "wang_3",
+      "file": "tile_03.png",
+      "corners": {
+        "NW": "lower",
+        "NE": "lower",
+        "SW": "upper",
+        "SE": "upper"
+      },
+      "signature": "LLUU",
+      "reading": "lower above, upper below — horizontal edge",
+      "row": 1,
+      "col": 2,
+      "sha256": "637ad74caf1c198a53faf73e5197b66c16b8684acde7f3b30296dedd5a0eb007"
+    },
+    {
+      "id": "2",
+      "name": "wang_2",
+      "file": "tile_02.png",
+      "corners": {
+        "NW": "lower",
+        "NE": "lower",
+        "SW": "upper",
+        "SE": "lower"
+      },
+      "signature": "LLUL",
+      "reading": "lower with one upper corner — outer corner",
+      "row": 1,
+      "col": 3,
+      "sha256": "b158c334d826b02b30d4799f0caad5a7649f391219b44826989e09749a826aa5"
+    },
+    {
+      "id": "5",
+      "name": "wang_5",
+      "file": "tile_05.png",
+      "corners": {
+        "NW": "lower",
+        "NE": "upper",
+        "SW": "lower",
+        "SE": "upper"
+      },
+      "signature": "LULU",
+      "reading": "lower left, upper right — vertical edge",
+      "row": 2,
+      "col": 1,
+      "sha256": "3da4f5b46425783a9d3315109400946b8f67f034396fefed05fe2a457acf9aba"
+    },
+    {
+      "id": "15",
+      "name": "wang_15",
+      "file": "tile_15.png",
+      "corners": {
+        "NW": "upper",
+        "NE": "upper",
+        "SW": "upper",
+        "SE": "upper"
+      },
+      "signature": "UUUU",
+      "reading": "solid upper terrain — interior fill",
+      "row": 2,
+      "col": 2,
+      "sha256": "db2e7791afb762969da73ddf51ed04f1f18ef269005afa72a37d3d7c5b646f0a"
+    },
+    {
+      "id": "14",
+      "name": "wang_14",
+      "file": "tile_14.png",
+      "corners": {
+        "NW": "upper",
+        "NE": "upper",
+        "SW": "upper",
+        "SE": "lower"
+      },
+      "signature": "UUUL",
+      "reading": "upper with one lower corner — inner corner",
+      "row": 3,
+      "col": 4,
+      "sha256": "38f6ed7d48cfb3e9b6e3fc7722719a0d750493c4ad1500c420ef8ff235acd3af"
+    },
+    {
+      "id": "9",
+      "name": "wang_9",
+      "file": "tile_09.png",
+      "corners": {
+        "NW": "upper",
+        "NE": "lower",
+        "SW": "lower",
+        "SE": "upper"
+      },
+      "signature": "ULLU",
+      "reading": "diagonal split",
+      "row": 4,
+      "col": 4,
+      "sha256": "3a7beaadb0636344dfc4e7ce84f901c050633cbead6ad13f3d7c1713b981d0c3"
+    },
+    {
+      "id": "7",
+      "name": "wang_7",
+      "file": "tile_07.png",
+      "corners": {
+        "NW": "lower",
+        "NE": "upper",
+        "SW": "upper",
+        "SE": "upper"
+      },
+      "signature": "LUUU",
+      "reading": "upper with one lower corner — inner corner",
+      "row": 2,
+      "col": 4,
+      "sha256": "a64881695bb1f1144f171b59db3da137ebbb01c600038012fc41c9f113d1a836"
+    }
+  ]
+}

@@ -1,0 +1,416 @@
+{
+  "tileset_id": "136a6986-dbd7-4a45-8338-d4e6a74cf93b",
+  "source": "https://api.pixellab.ai/v2/tilesets/136a6986-dbd7-4a45-8338-d4e6a74cf93b",
+  "fetched_at": "2026-08-25T22:13:23.512Z",
+  "tile_size": {
+    "width": 16,
+    "height": 16
+  },
+  "total_tiles": 25,
+  "terrain_types": [
+    "lower",
+    "upper"
+  ],
+  "tiles": [
+    {
+      "id": "96037133-227b-4c6c-9eb1-552806cc08f1",
+      "name": "t1_0_r1_c0",
+      "file": "tile_96037133-227b-4c6c-9eb1-552806cc08f1.png",
+      "corners": {
+        "NW": "lower",
+        "NE": "lower",
+        "SW": "lower",
+        "SE": "lower"
+      },
+      "signature": "LLLL",
+      "reading": "solid lower terrain — interior fill",
+      "row": 1,
+      "col": 0,
+      "sha256": "3b5e72af5705e745cc1f52808b40f0ca6e38e3f9566375922a95eabcfc589380"
+    },
+    {
+      "id": "1",
+      "name": "t1_1_r2_c1",
+      "file": "tile_01.png",
+      "corners": {
+        "NW": "lower",
+        "NE": "lower",
+        "SW": "lower",
+        "SE": "upper"
+      },
+      "signature": "LLLU",
+      "reading": "lower with one upper corner — outer corner",
+      "row": 2,
+      "col": 1,
+      "sha256": "f8e8c74fcb8e132fbe6ea8e2f44f60c17e932d9356c73819ab12adaafa8a73cf"
+    },
+    {
+      "id": "2",
+      "name": "t1_2_r2_c2",
+      "file": "tile_02.png",
+      "corners": {
+        "NW": "lower",
+        "NE": "lower",
+        "SW": "upper",
+        "SE": "upper"
+      },
+      "signature": "LLUU",
+      "reading": "lower above, upper below — horizontal edge",
+      "row": 2,
+      "col": 2,
+      "sha256": "f6acc96926d39a42df5c51d1f904ca84d060b2bcf30467523dbae455018895e0"
+    },
+    {
+      "id": "3",
+      "name": "t1_3_r2_c3",
+      "file": "tile_03.png",
+      "corners": {
+        "NW": "lower",
+        "NE": "lower",
+        "SW": "upper",
+        "SE": "lower"
+      },
+      "signature": "LLUL",
+      "reading": "lower with one upper corner — outer corner",
+      "row": 2,
+      "col": 3,
+      "sha256": "f787a38e1a1d68584606ecb3f469a10785e09e9967b9cb4a9dfc2dc66a7520ef"
+    },
+    {
+      "id": "10",
+      "name": "t1_10_r3_c1",
+      "file": "tile_10.png",
+      "corners": {
+        "NW": "lower",
+        "NE": "upper",
+        "SW": "lower",
+        "SE": "upper"
+      },
+      "signature": "LULU",
+      "reading": "lower left, upper right — vertical edge",
+      "row": 3,
+      "col": 1,
+      "sha256": "a996723ec549316220729544bc0fc7355d229d39c954b5ab5893d1eb5a98b569"
+    },
+    {
+      "id": "4",
+      "name": "t1_4_r4_c1",
+      "file": "tile_04.png",
+      "corners": {
+        "NW": "lower",
+        "NE": "upper",
+        "SW": "lower",
+        "SE": "upper"
+      },
+      "signature": "LULU",
+      "reading": "lower left, upper right — vertical edge",
+      "row": 4,
+      "col": 1,
+      "sha256": "949cf9917ece5181c622189c6bb763de2d24f8fcbbb4b33892d7e0a911ba19d2"
+    },
+    {
+      "id": "8b87fa1d-373f-4280-9010-7b007206d9bb",
+      "name": "t1_5_r5_c2",
+      "file": "tile_8b87fa1d-373f-4280-9010-7b007206d9bb.png",
+      "corners": {
+        "NW": "upper",
+        "NE": "upper",
+        "SW": "upper",
+        "SE": "upper"
+      },
+      "signature": "UUUU",
+      "reading": "solid upper terrain — interior fill",
+      "row": 5,
+      "col": 2,
+      "sha256": "6e99cbae235a27e63762222df3464706ce74295b530e4fc78b96598b50189e14"
+    },
+    {
+      "id": "6",
+      "name": "t1_6_r3_c6",
+      "file": "tile_06.png",
+      "corners": {
+        "NW": "upper",
+        "NE": "lower",
+        "SW": "upper",
+        "SE": "lower"
+      },
+      "signature": "ULUL",
+      "reading": "upper left, lower right — vertical edge",
+      "row": 3,
+      "col": 6,
+      "sha256": "12968edacf0b5d2ada628533ce86a31347a215628ea550a9c87077d30ae204a0"
+    },
+    {
+      "id": "14",
+      "name": "t1_14_r4_c6",
+      "file": "tile_14.png",
+      "corners": {
+        "NW": "upper",
+        "NE": "lower",
+        "SW": "upper",
+        "SE": "lower"
+      },
+      "signature": "ULUL",
+      "reading": "upper left, lower right — vertical edge",
+      "row": 4,
+      "col": 6,
+      "sha256": "b7b9c5fce9746c6c16b6117dc4fb27ce4716378e3a966845cb8a1d3629597b60"
+    },
+    {
+      "id": "8",
+      "name": "t1_8_r4_c3",
+      "file": "tile_08.png",
+      "corners": {
+        "NW": "upper",
+        "NE": "lower",
+        "SW": "upper",
+        "SE": "upper"
+      },
+      "signature": "ULUU",
+      "reading": "upper with one lower corner — inner corner",
+      "row": 4,
+      "col": 3,
+      "sha256": "ad93461abe17a7ebeac50d6d3e6ae32ad7a779e8ce8a3d89931e7005bfc55f44"
+    },
+    {
+      "id": "9",
+      "name": "t1_9_r4_c4",
+      "file": "tile_09.png",
+      "corners": {
+        "NW": "lower",
+        "NE": "upper",
+        "SW": "upper",
+        "SE": "upper"
+      },
+      "signature": "LUUU",
+      "reading": "upper with one lower corner — inner corner",
+      "row": 4,
+      "col": 4,
+      "sha256": "146526d08c6f10c7f9a021ce502fb0cd87b3a14244e322d7f5cbe88caea68000"
+    },
+    {
+      "id": "16",
+      "name": "t1_16_r6_c4",
+      "file": "tile_16.png",
+      "corners": {
+        "NW": "upper",
+        "NE": "upper",
+        "SW": "upper",
+        "SE": "transition"
+      },
+      "signature": "UUU?",
+      "reading": "upper with one lower corner — inner corner",
+      "row": 6,
+      "col": 4,
+      "sha256": "e184dd2d2b0efbac0001fb81b9998416b77d1550bb70abaa9d1fe5fd38563a0b"
+    },
+    {
+      "id": "17",
+      "name": "t1_17_r6_c5",
+      "file": "tile_17.png",
+      "corners": {
+        "NW": "upper",
+        "NE": "upper",
+        "SW": "transition",
+        "SE": "transition"
+      },
+      "signature": "UU??",
+      "reading": "diagonal split",
+      "row": 6,
+      "col": 5,
+      "sha256": "f6eac3ccf5d71baa18527819dcc7d98cf603b83a57e11b7023900f6b6d519f21"
+    },
+    {
+      "id": "18",
+      "name": "t1_18_r6_c6",
+      "file": "tile_18.png",
+      "corners": {
+        "NW": "upper",
+        "NE": "lower",
+        "SW": "transition",
+        "SE": "lower"
+      },
+      "signature": "UL?L",
+      "reading": "lower with one upper corner — outer corner",
+      "row": 6,
+      "col": 6,
+      "sha256": "1fd7347591b3cbd81d0edbd17534b82d48734b692cf99ba476f8b0477d35113a"
+    },
+    {
+      "id": "19",
+      "name": "t1_19_r7_c4",
+      "file": "tile_19.png",
+      "corners": {
+        "NW": "upper",
+        "NE": "transition",
+        "SW": "upper",
+        "SE": "lower"
+      },
+      "signature": "U?UL",
+      "reading": "diagonal split",
+      "row": 7,
+      "col": 4,
+      "sha256": "a2f0c95d25f719b8d72762353c0c53626848c3964e4b1d7fee01bcc9ff324337"
+    },
+    {
+      "id": "20",
+      "name": "t1_20_r7_c5",
+      "file": "tile_20.png",
+      "corners": {
+        "NW": "transition",
+        "NE": "transition",
+        "SW": "lower",
+        "SE": "lower"
+      },
+      "signature": "??LL",
+      "reading": "diagonal split",
+      "row": 7,
+      "col": 5,
+      "sha256": "8b774ad75278acbf23279fd612210217ffa7293b456f5019d6b84c0941a303a6"
+    },
+    {
+      "id": "21",
+      "name": "t1_21_r7_c6",
+      "file": "tile_21.png",
+      "corners": {
+        "NW": "transition",
+        "NE": "lower",
+        "SW": "lower",
+        "SE": "lower"
+      },
+      "signature": "?LLL",
+      "reading": "diagonal split",
+      "row": 7,
+      "col": 6,
+      "sha256": "c7d977332eb392a871ca642c01f1295d492324edcd4757754b334d9b5f83f801"
+    },
+    {
+      "id": "22",
+      "name": "t1_22_r8_c1",
+      "file": "tile_22.png",
+      "corners": {
+        "NW": "lower",
+        "NE": "upper",
+        "SW": "lower",
+        "SE": "transition"
+      },
+      "signature": "LUL?",
+      "reading": "lower with one upper corner — outer corner",
+      "row": 8,
+      "col": 1,
+      "sha256": "7c7f8074cfbd09869f514f34b4d30aa62fb5773ddb815149a8de7ef83c709432"
+    },
+    {
+      "id": "23",
+      "name": "t1_23_r8_c2",
+      "file": "tile_23.png",
+      "corners": {
+        "NW": "upper",
+        "NE": "upper",
+        "SW": "transition",
+        "SE": "upper"
+      },
+      "signature": "UU?U",
+      "reading": "upper with one lower corner — inner corner",
+      "row": 8,
+      "col": 2,
+      "sha256": "024848e545c5646cfaba188e340fdcf157fb5d23580af942fc36e107ce09f148"
+    },
+    {
+      "id": "24",
+      "name": "t1_24_r8_c4",
+      "file": "tile_24.png",
+      "corners": {
+        "NW": "upper",
+        "NE": "lower",
+        "SW": "transition",
+        "SE": "upper"
+      },
+      "signature": "UL?U",
+      "reading": "diagonal split",
+      "row": 8,
+      "col": 4,
+      "sha256": "63cf193d5f1defc86eb8d0cd91677593da6b218f88f05e87047dc9e22fc36ebc"
+    },
+    {
+      "id": "25",
+      "name": "t1_25_r9_c1",
+      "file": "tile_25.png",
+      "corners": {
+        "NW": "lower",
+        "NE": "transition",
+        "SW": "lower",
+        "SE": "lower"
+      },
+      "signature": "L?LL",
+      "reading": "diagonal split",
+      "row": 9,
+      "col": 1,
+      "sha256": "46ac6b1894f1da950ed80b5c46b26e01cb6a1528be36f000881d1378bd792c36"
+    },
+    {
+      "id": "26",
+      "name": "t1_26_r9_c2",
+      "file": "tile_26.png",
+      "corners": {
+        "NW": "transition",
+        "NE": "upper",
+        "SW": "lower",
+        "SE": "upper"
+      },
+      "signature": "?ULU",
+      "reading": "diagonal split",
+      "row": 9,
+      "col": 2,
+      "sha256": "82d7419dfb0ff3a0d4754159ed4d03b69d46aaf340246fed7b46205f3b0ac50d"
+    },
+    {
+      "id": "27",
+      "name": "t1_27_r9_c4",
+      "file": "tile_27.png",
+      "corners": {
+        "NW": "transition",
+        "NE": "upper",
+        "SW": "lower",
+        "SE": "upper"
+      },
+      "signature": "?ULU",
+      "reading": "diagonal split",
+      "row": 9,
+      "col": 4,
+      "sha256": "c7b8b75b1b37f1c1e8d6eb85eb81f9b9da8dba1b19c56f83dbdb4cf93e8aadde"
+    },
+    {
+      "id": "28",
+      "name": "t1_28_r10_c2",
+      "file": "tile_28.png",
+      "corners": {
+        "NW": "lower",
+        "NE": "upper",
+        "SW": "upper",
+        "SE": "transition"
+      },
+      "signature": "LUU?",
+      "reading": "diagonal split",
+      "row": 10,
+      "col": 2,
+      "sha256": "cf7c4fe1364588c6ae22b32af3e0a9862fd562c32170f0f1c47b01e98a8c0d69"
+    },
+    {
+      "id": "30",
+      "name": "t1_30_r11_c2",
+      "file": "tile_30.png",
+      "corners": {
+        "NW": "upper",
+        "NE": "transition",
+        "SW": "upper",
+        "SE": "lower"
+      },
+      "signature": "U?UL",
+      "reading": "diagonal split",
+      "row": 11,
+      "col": 2,
+      "sha256": "2c258d55ab3ae320201cd48a09c25f425fab50b4460ff9bbb2091c9a8b8794bc"
+    }
+  ]
+}

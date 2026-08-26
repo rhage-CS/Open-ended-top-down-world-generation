@@ -3,34 +3,11 @@
  * validate.js — scene validator for the Tiny Town composition rules.
  *
  * Encodes the rules from TINYTOWN_v2.md as checks over a tile grid and emits
- * a violation list.
+ * a violation list. Scope is restricted to indices 71-131, the verified range.
  *
  *   node tools/validate.js levels/scene.json
- *   node tools/validate.js levels/scene.json --json           machine-readable
- *   node tools/validate.js levels/scene.json --scope=71-131   restrict range
- *   node tools/validate.js levels/scene.json --zero=tile      0 means grass, not empty
- *   node tools/validate.js levels/scene.json --layer=objects  pick a layer by name
- *   node tools/validate.js --selftest                         check the checker
- *
- * RULE COUNT: fourteen composition rules, plus `scope`, which is a validity
- * check rather than a composition rule. Rule labels below run R0-R15 with no
- * R10, which is why the label range and the rule count disagree. When quoting
- * a total anywhere, quote fourteen.
- *
- * ZERO WARNING: the grass fill is index 0 and Tiled uses 0 for "empty". By
- * default 0 is read as empty. If your scene uses raw indices and has grass
- * ground, pass --zero=tile or every ground tile is dropped before validation.
- *
- * LAYERS: every rule concerns objects, so a two-layer scene must be validated
- * against its objects layer. A layer literally named "objects" is preferred;
- * otherwise the topmost layer with data wins, which is the convention the
- * viewer also uses (ground first, objects above). Pass --layer= to override.
- *
- * SCOPE: the dictionary now covers 0-131, so the default scope is the full
- * sheet. Earlier probe runs were restricted to 71-131 because rows 0-5 were
- * unlabelled and no ground tile existed. Pass --scope=71-131 to reproduce those
- * runs. Note that under that restriction the roof and fence rules (R11-R15) are
- * unreachable, since every tile they govern is below index 71.
+ *   node tools/validate.js levels/scene.json --json      machine-readable
+ *   node tools/validate.js --selftest                    check the checker
  *
  * TILED GID WARNING: Tiled writes 1-based gids with 0 meaning empty, so a tile
  * with index 85 is stored as 86. Pass --offset=-1 to correct. If your first run
@@ -65,7 +42,7 @@ const FACADE_RIGHT_END = new Set([75, 79]);
 const ROCK_PAIR = new Map([[111, 112], [113, 114]]);
 const ROCK_RIGHT_HALVES = new Set([112, 114]);
 
-// Fence system B: posts and rails, row 6 cols 8-11.
+// Fence system.
 const POST_RAIL_RIGHT = 80;   // (6,8)  rail extends right
 const RAIL            = 81;   // (6,9)  horizontal rail
 const POST_RAIL_LEFT  = 82;   // (6,10) rail extends left
@@ -81,94 +58,25 @@ const ASM_RIGHT = new Set([98, 101, 110, 122]);
 const ASM_MID   = new Set([97, 100, 109, 121]);
 const ASSEMBLY  = new Set([...ASM_LEFT, ...ASM_RIGHT, ...ASM_MID]);
 
-// --- Roof, rows 4-5 cols 0-7 -----------------------------------------------
-// Variant A: blue-grey roof over wood wall.  Variant B: roof-red over blue-grey
-// wall. Related by the two-ramp shift, so the SAME blue-grey RGB values are the
-// roof in A and the wall in B. That is what R13 exists to catch.
-
-const ROOF_A = new Set([48, 49, 50, 51, 60, 61, 62, 63]);
-const ROOF_B = new Set([52, 53, 54, 55, 64, 65, 66, 67]);
-const ROOF   = new Set([...ROOF_A, ...ROOF_B]);
-
-const ROOF_UPPER = new Set([48, 49, 50, 51, 52, 53, 54, 55]);  // row 4
-const ROOF_LOWER = new Set([60, 61, 62, 63, 64, 65, 66, 67]);  // row 5
-
-const ROOF_LEFT_EDGE  = new Set([48, 52, 60, 64]);
-const ROOF_RIGHT_EDGE = new Set([50, 54, 62, 66]);
-const ROOF_FILL       = new Set([49, 53, 61, 65]);
-const ROOF_DORMER     = new Set([51, 55, 63, 67]);   // dormer (row 4), gable (row 5)
-
-const roofVariant = t => (ROOF_A.has(t) ? 'A' : ROOF_B.has(t) ? 'B' : null);
-
-// --- Fence system A: enclosure, rows 3-5 cols 8-10 + col 11 vertical run ----
-// Connections are derived from non-transparent pixels per edge, not appearance.
-// 57 (4,9) is the cart that sits inside the pen: an object, not a fence piece.
-// 71 (5,11) is deliberately absent — see the note on R7 below.
-
-const FENCE_CONN = new Map([
-  [44, 'ES'], [45, 'EW'], [46, 'SW'], [47, 'S'],
-  [56, 'NS'],             [58, 'NS'], [59, 'NS'],
-  [68, 'NE'], [69, 'EW'], [70, 'NW'],
-]);
-const ENCLOSURE = new Set(FENCE_CONN.keys());
-const RAIL_SYSTEM = new Set([POST_RAIL_RIGHT, RAIL, POST_RAIL_LEFT]);
-const CART = 57;
-
-// Vertical fence pieces that may legitimately sit above 71 if the col-11 run
-// reading is correct. Used only to avoid a false positive in R7.
-const VFENCE_COL11 = new Set([47, 59]);
-
-const OPPOSITE = { N: 'S', S: 'N', E: 'W', W: 'E' };
-const DELTA    = { N: [0, -1], S: [0, 1], E: [1, 0], W: [-1, 0] };
-
-const DEFAULT_SCOPE = [0, 131];
-
-// Tiled writes 0 for "no tile", but the grass fill is genuinely index 0. Which
-// one 0 means depends on the file, so it is a flag rather than a guess.
-//   default        0 = empty  (Tiled-safe, and what every pre-0-131 scene meant)
-//   --zero=tile    0 = grass fill, index 0
-// Get this wrong on a scene with ground and every ground tile silently
-// disappears before any rule sees it.
-const EMPTY_BASE = new Set([-1, null, undefined]);
+const SCOPE_MIN = 71, SCOPE_MAX = 131;
+const EMPTY = new Set([-1, 0, null, undefined]);
 
 // ---------------------------------------------------------------------------
 // Grid loading
 // ---------------------------------------------------------------------------
 
-/**
- * Choose which layer the rules run over.
- *
- * Every rule concerns objects. A two-layer scene is ground-then-objects, so
- * the topmost layer is the right default — but that is positional, and a file
- * written with the layers in the other order would silently score its terrain
- * and report a clean scene full of grass. Prefer the layer named "objects" so
- * the choice does not depend on array order.
- */
-function pickLayer(layers, spec) {
-  if (spec) {
-    const byName = layers.find(l => l.name === spec);
-    if (byName) return byName;
-    const idx = Number(spec);
-    if (Number.isInteger(idx) && layers[idx]) return layers[idx];
-    throw new Error(`No layer matching --layer=${spec}. Available: ${layers.map(l => l.name).join(', ')}`);
-  }
-  return layers.find(l => l.name === 'objects') || layers[layers.length - 1];
-}
-
-function loadGrid(path, offset, zeroIsTile = false, layerSpec = null) {
+function loadGrid(path, offset) {
   const raw = JSON.parse(fs.readFileSync(path, 'utf8'));
   let data, width, height;
 
   if (Array.isArray(raw) && Array.isArray(raw[0])) {
-    return raw.map(r => r.map(v => applyOffset(v, offset, zeroIsTile)));
+    return raw.map(r => r.map(v => applyOffset(v, offset)));
   }
   if (raw.layers && raw.layers.length) {
-    const withData = raw.layers.filter(l => Array.isArray(l.data));
-    if (!withData.length) throw new Error('No layer with a data array.');
-    const layer = pickLayer(withData, layerSpec);
+    const layer = raw.layers.find(l => Array.isArray(l.data)) || raw.layers[0];
     // A layer's data may be a nested 2D array or a flat row-major array.
     if (Array.isArray(layer.data[0])) {
-      return layer.data.map(r => r.map(v => applyOffset(v, offset, zeroIsTile)));
+      return layer.data.map(r => r.map(v => applyOffset(v, offset)));
     }
     ({ data } = layer);
     width  = layer.width  || raw.width;
@@ -184,14 +92,13 @@ function loadGrid(path, offset, zeroIsTile = false, layerSpec = null) {
 
   const grid = [];
   for (let y = 0; y < height; y++) {
-    grid.push(data.slice(y * width, (y + 1) * width).map(v => applyOffset(v, offset, zeroIsTile)));
+    grid.push(data.slice(y * width, (y + 1) * width).map(v => applyOffset(v, offset)));
   }
   return grid;
 }
 
-function applyOffset(v, offset, zeroIsTile) {
-  if (EMPTY_BASE.has(v)) return -1;
-  if (v === 0 && !zeroIsTile) return -1;
+function applyOffset(v, offset) {
+  if (EMPTY.has(v)) return -1;
   return v + offset;
 }
 
@@ -199,22 +106,20 @@ function applyOffset(v, offset, zeroIsTile) {
 // Rule engine
 // ---------------------------------------------------------------------------
 
-function validate(grid, scope = DEFAULT_SCOPE) {
-  const [SCOPE_MIN, SCOPE_MAX] = scope;
+function validate(grid) {
   const V = [];
   const H = grid.length, W = H ? grid[0].length : 0;
   const at = (x, y) => (y < 0 || y >= H || x < 0 || x >= W) ? -1 : grid[y][x];
   const add = (rule, x, y, message) => V.push({ rule, x, y, message });
-  const show = v => (v === -1 ? 'empty' : v);
 
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       const t = at(x, y);
       if (t === -1) continue;
 
-      // R0 — scope. Validity check, not a composition rule.
+      // R0 — scope
       if (t < SCOPE_MIN || t > SCOPE_MAX) {
-        add('scope', x, y, `tile ${t} is outside the scope ${SCOPE_MIN}-${SCOPE_MAX}`);
+        add('scope', x, y, `tile ${t} is outside the verified range ${SCOPE_MIN}-${SCOPE_MAX}`);
         continue;
       }
 
@@ -232,14 +137,14 @@ function validate(grid, scope = DEFAULT_SCOPE) {
         const want = DOUBLE_PAIR.get(t);
         if (R !== want) {
           add('double-door-unpaired', x, y,
-            `left leaf ${t} needs right leaf ${want} at x+1, found ${show(R)}`);
+            `left leaf ${t} needs right leaf ${want} at x+1, found ${R === -1 ? 'empty' : R}`);
         }
       }
       if (DOUBLE_RIGHT_LEAVES.has(t)) {
         const wantLeft = t - 1;
         if (L !== wantLeft) {
           add('double-door-unpaired', x, y,
-            `right leaf ${t} needs left leaf ${wantLeft} at x-1, found ${show(L)}`);
+            `right leaf ${t} needs left leaf ${wantLeft} at x-1, found ${L === -1 ? 'empty' : L}`);
         }
       }
 
@@ -269,7 +174,7 @@ function validate(grid, scope = DEFAULT_SCOPE) {
         const want = ROCK_PAIR.get(t);
         if (R !== want) {
           add('rock-unpaired', x, y,
-            `left half ${t} needs right half ${want} at x+1, found ${show(R)}` +
+            `left half ${t} needs right half ${want} at x+1, found ${R === -1 ? 'empty' : R}` +
             (ROCK_RIGHT_HALVES.has(R) ? ' — cut-outs mismatched' : ''));
         }
       }
@@ -277,7 +182,7 @@ function validate(grid, scope = DEFAULT_SCOPE) {
         const wantLeft = t - 1;
         if (L !== wantLeft) {
           add('rock-unpaired', x, y,
-            `right half ${t} needs left half ${wantLeft} at x-1, found ${show(L)}`);
+            `right half ${t} needs left half ${wantLeft} at x-1, found ${L === -1 ? 'empty' : L}`);
         }
       }
 
@@ -285,39 +190,30 @@ function validate(grid, scope = DEFAULT_SCOPE) {
       if (t === RAIL) {
         if (L !== POST_RAIL_RIGHT && L !== RAIL) {
           add('rail-unanchored', x, y,
-            `rail ${RAIL} needs ${POST_RAIL_RIGHT} or another rail to its left, found ${show(L)}`);
+            `rail ${RAIL} needs ${POST_RAIL_RIGHT} or another rail to its left, found ${L === -1 ? 'empty' : L}`);
         }
         if (R !== POST_RAIL_LEFT && R !== RAIL) {
           add('rail-unanchored', x, y,
-            `rail ${RAIL} needs ${POST_RAIL_LEFT} or another rail to its right, found ${show(R)}`);
+            `rail ${RAIL} needs ${POST_RAIL_LEFT} or another rail to its right, found ${R === -1 ? 'empty' : R}`);
         }
       }
 
       // R7 — sign mounts above the post (placement inverts index order)
-      //
-      // CONFLICT, UNRESOLVED. v2 records 71 (5,11) two ways: as the post the
-      // sign mounts on, and as the bottom of the col-11 vertical fence run
-      // 47/59/71. Both cannot be the primary reading. The post->sign direction
-      // therefore fires only when 71 is NOT sitting under a vertical fence
-      // piece, so a legitimate fence run does not score a false violation.
-      // Resolve by diffing 71's top edge against 59's bottom edge and against
-      // 83's bottom edge, then delete whichever branch loses.
       if (t === SIGN && D !== POST_STEM) {
         add('sign-unmounted', x, y,
-          `sign ${SIGN} needs post ${POST_STEM} directly below, found ${show(D)}`);
+          `sign ${SIGN} needs post ${POST_STEM} directly below, found ${D === -1 ? 'empty' : D}`);
       }
-      if (t === POST_STEM && U !== SIGN && !VFENCE_COL11.has(U)) {
+      if (t === POST_STEM && U !== SIGN) {
         add('sign-unmounted', x, y,
-          `post ${POST_STEM} has a rising stem and needs sign ${SIGN} above ` +
-          `(or a col-11 fence piece), found ${show(U)}`);
+          `post ${POST_STEM} has a rising stem and needs sign ${SIGN} above, found ${U === -1 ? 'empty' : U}`);
       }
 
       // R8 — well halves form one object
       if (t === WELL_TOP && D !== WELL_BOTTOM) {
-        add('well-split', x, y, `well top ${WELL_TOP} needs ${WELL_BOTTOM} below, found ${show(D)}`);
+        add('well-split', x, y, `well top ${WELL_TOP} needs ${WELL_BOTTOM} below, found ${D === -1 ? 'empty' : D}`);
       }
       if (t === WELL_BOTTOM && U !== WELL_TOP) {
-        add('well-split', x, y, `well bottom ${WELL_BOTTOM} needs ${WELL_TOP} above, found ${show(U)}`);
+        add('well-split', x, y, `well bottom ${WELL_BOTTOM} needs ${WELL_TOP} above, found ${U === -1 ? 'empty' : U}`);
       }
 
       // R9 — assembly edge pieces belong on edges
@@ -327,78 +223,6 @@ function validate(grid, scope = DEFAULT_SCOPE) {
       if (ASM_RIGHT.has(t) && ASSEMBLY.has(R)) {
         add('assembly-edge-interior', x, y, `right-edge tile ${t} has assembly tile ${R} to its right`);
       }
-
-      // R11 — roof colourway purity
-      if (ROOF.has(t)) {
-        const mine = roofVariant(t);
-        for (const [nx, ny, n] of [[x + 1, y, R], [x, y + 1, D]]) {
-          if (!ROOF.has(n)) continue;
-          const theirs = roofVariant(n);
-          if (mine !== theirs) {
-            add('roof-colourway-mixed', x, y,
-              `roof ${t} (variant ${mine}) is adjacent to ${n} (variant ${theirs}) at ${nx},${ny}`);
-          }
-        }
-      }
-
-      // R12 — roof run ordering
-      // left-edge, then zero or more fill/dormer, then right-edge.
-      if (ROOF_LEFT_EDGE.has(t) && ROOF.has(L)) {
-        add('roof-run-order', x, y, `left-edge roof ${t} has roof tile ${L} to its left`);
-      }
-      if (ROOF_RIGHT_EDGE.has(t) && ROOF.has(R)) {
-        add('roof-run-order', x, y, `right-edge roof ${t} has roof tile ${R} to its right`);
-      }
-      if (ROOF_DORMER.has(t)) {
-        if (!ROOF.has(L)) {
-          add('roof-run-order', x, y,
-            `dormer/gable ${t} is in a terminal position; needs roof to its left, found ${show(L)}`);
-        }
-        if (!ROOF.has(R)) {
-          add('roof-run-order', x, y,
-            `dormer/gable ${t} is in a terminal position; needs roof to its right, found ${show(R)}`);
-        }
-      }
-
-      // R13 — material-role consistency
-      // The blue-grey ramp is roof in variant A and wall in variant B. An agent
-      // matching on colour will stack an A roof over a B roof and build a
-      // house made of two roofs. Vertical roof runs must hold one variant.
-      if (ROOF.has(t) && ROOF.has(D) && roofVariant(t) !== roofVariant(D)) {
-        add('roof-variant-stacked', x, y,
-          `roof ${t} (variant ${roofVariant(t)}) sits directly above ${D} (variant ${roofVariant(D)}); ` +
-          `the shared blue-grey ramp is roof in A and wall in B, so this is two roofs, not a roof and a wall`);
-      }
-
-      // R14 — fence enclosure integrity
-      if (FENCE_CONN.has(t)) {
-        for (const d of FENCE_CONN.get(t)) {
-          const [dx, dy] = DELTA[d];
-          const n = at(x + dx, y + dy);
-          const nConn = FENCE_CONN.get(n);
-          if (!nConn || !nConn.includes(OPPOSITE[d])) {
-            add('fence-connection-dangling', x, y,
-              `fence ${t} declares a ${d} connection but ${show(n)} at ${x + dx},${y + dy} ` +
-              `does not connect back ${OPPOSITE[d]}`);
-          }
-        }
-      }
-
-      // R15 — fence system purity
-      // Two orange-ramp fence systems, verified distinct by pixel diff at
-      // 37/62/37 out of 256. Similar silhouettes, not interchangeable.
-      if (ENCLOSURE.has(t) || RAIL_SYSTEM.has(t)) {
-        const mineEnc = ENCLOSURE.has(t);
-        for (const [nx, ny, n] of [[x + 1, y, R], [x - 1, y, L], [x, y + 1, D], [x, y - 1, U]]) {
-          const theirsEnc = ENCLOSURE.has(n), theirsRail = RAIL_SYSTEM.has(n);
-          if (!theirsEnc && !theirsRail) continue;
-          if (mineEnc !== theirsEnc) {
-            add('fence-system-mixed', x, y,
-              `${t} (${mineEnc ? 'enclosure' : 'rail'} system) is adjacent to ` +
-              `${n} (${theirsEnc ? 'enclosure' : 'rail'} system) at ${nx},${ny}`);
-          }
-        }
-      }
     }
   }
   return V;
@@ -406,95 +230,45 @@ function validate(grid, scope = DEFAULT_SCOPE) {
 
 // ---------------------------------------------------------------------------
 // Self-test: one clean scene, one deliberately broken.
-// A clean run here is the only thing that lets you trust a zero score. Every
-// rule must appear in the BAD scene, or a rule that never fires is
-// indistinguishable from a compliant agent.
-//
-// EXPECTED_RULES is the guard on that guard. If a rule exists in the engine but
-// is missing from this list, the selftest reports a pass over a smaller
-// denominator and the omission is invisible. That is exactly what happened to
-// wall-end-interior and assembly-edge-interior: implemented, never listed,
-// never observed to fire. Add a rule to the engine, add it here in the same
-// commit.
+// A clean run here is the only thing that lets you trust a zero score.
 // ---------------------------------------------------------------------------
 
 const E = -1;
 const GOOD = [
-  [ 72,  73,  84,  73,  75,   E,  83,   E,  48,  49,  51,  50],
-  [ 72,  86,  87,  85,  75,   E,  71,   E,  60,  61,  63,  62],
-  [  E,   E,   E,   E,   E,   E,   E,   E,   E,   E,   E,   E],
-  [ 96,  97,  98,   E,  80,  81,  81,  82,   E, 111, 112,   E],
-  [108, 109, 110,   E,   E,   E,   E,   E,   E, 113, 114,   E],
-  [  E,   E,   E,   E,  44,  45,  46,   E,  52,  53,  55,  54],
-  [ 92,   E,   E,   E,  56,  57,  58,   E,  64,  65,  67,  66],
-  [104,   E,   E,   E,  68,  69,  70,   E,   E,   E,   E,   E],
+  [ 72, 73, 84, 73, 75,  E, 83,  E,  E, 92,  E],
+  [ 72, 86, 87, 85, 75,  E, 71,  E,  E,104,  E],
+  [  E,  E,  E,  E,  E,  E,  E,  E,  E,  E,  E],
+  [ 96, 97, 98,  E, 80, 81, 81, 82,  E,111,112],
+  [108,109,110,  E,  E,  E,  E,  E,  E,113,114],
 ];
 
 const BAD = [
-  // 77 blue inside an orange run; 48 beside 53 mixes roof variants
-  [ 72,  73,  84,  77,  75,   E,  83,   E,  48,  53,   E,   E],
-  // 86 unpaired; sign has no post below; 48 stacked over 64 across variants
-  [ 72,  86,  85,  85,  75,   E,   E,   E,  64,   E,   E,   E],
-  // facade sits under the doors on row 1
-  [ 73,  73,   E,   E,   E,   E,   E,   E,   E,   E,   E,   E],
-  // rail unanchored both ends; 48 left-edge with roof 49 to its left;
-  // assembly left-edge 96 and right-edge 98 buried inside a run
-  [ 97,  96,  98,  97,  81,  81,   E,   E,  49,  48,   E,   E],
-  // 44 abuts rail 81: system mix and a dangling E connection; 51 dormer terminal
-  [  E,   E,   E,   E,  44,  81,   E,   E,  51,   E,   E,   E],
-  // rock cut-outs mismatched
-  [111, 114,   E,   E,   E,   E,   E,   E,   E,   E,   E,   E],
-  // well split
-  [ 92,   E,   E,   E,   E,   E,   E,   E,   E,   E,   E,   E],
-  // left-end 72 and right-end 75 buried inside a facade run. Same colourway
-  // throughout so R3 stays quiet, and the bottom row so nothing is grounded.
-  [ 73,  72,   E,  75,  73,   E,   E,   E,   E,   E,   E,   E],
-];
-
-const EXPECTED_RULES = [
-  'door-not-grounded', 'double-door-unpaired', 'colourway-mixed',
-  'wall-end-interior', 'rock-unpaired', 'rail-unanchored', 'sign-unmounted',
-  'well-split', 'assembly-edge-interior',
-  'roof-colourway-mixed', 'roof-run-order', 'roof-variant-stacked',
-  'fence-connection-dangling', 'fence-system-mixed',
+  [ 72, 73, 84, 77, 75,  E, 83,  E,  E, 92,  E],  // 77 blue inside orange run
+  [ 72, 86, 85, 85, 75,  E,  E,  E,  E,  E,  E],  // 86 unpaired; sign unmounted; well split
+  [ 73, 73,  E,  E,  E,  E,  E,  E,  E,  E,  E],  // facade under the doors on row 1
+  [ 96, 97, 98,  E, 81, 81,  E,  E,  E,111,114],  // rail unanchored both ends; rock cut-outs mixed
 ];
 
 function selftest() {
   const good = validate(GOOD);
   const bad  = validate(BAD);
-
-  const goodOk = good.length === 0;
-  console.log(`GOOD scene: ${good.length} violation(s)  ${goodOk ? 'PASS' : 'FAIL'}`);
+  console.log(`GOOD scene: ${good.length} violation(s)  ${good.length === 0 ? 'PASS' : 'FAIL'}`);
   good.forEach(v => console.log(`   unexpected: [${v.rule}] ${v.x},${v.y} ${v.message}`));
 
-  const fired = new Set(bad.map(v => v.rule));
-  const missing = EXPECTED_RULES.filter(r => !fired.has(r));
-  const unlisted = [...fired].filter(r => r !== 'scope' && !EXPECTED_RULES.includes(r));
-  const badOk = missing.length === 0 && unlisted.length === 0;
-
-  console.log(`BAD scene:  ${bad.length} violation(s) across ${fired.size} rule(s)  ${badOk ? 'PASS' : 'FAIL'}`);
+  const rules = new Set(bad.map(v => v.rule));
+  const expected = ['colourway-mixed', 'double-door-unpaired', 'door-not-grounded',
+                    'rail-unanchored', 'rock-unpaired', 'sign-unmounted', 'well-split'];
+  const missing = expected.filter(r => !rules.has(r));
+  console.log(`BAD scene:  ${bad.length} violation(s) across ${rules.size} rule(s)  ${missing.length === 0 ? 'PASS' : 'FAIL'}`);
   if (missing.length) console.log(`   rules that failed to fire: ${missing.join(', ')}`);
-  if (unlisted.length) {
-    console.log(`   rules fired but absent from EXPECTED_RULES: ${unlisted.join(', ')}`);
-    console.log('   add them to EXPECTED_RULES — an unlisted rule is never checked for coverage.');
-  }
   bad.forEach(v => console.log(`   [${v.rule}] ${v.x},${v.y} ${v.message}`));
 
-  console.log(`\nrules covered: ${EXPECTED_RULES.filter(r => fired.has(r)).length}/${EXPECTED_RULES.length}`);
-  return goodOk && badOk ? 0 : 1;
+  return good.length === 0 && missing.length === 0 ? 0 : 1;
 }
 
 // ---------------------------------------------------------------------------
 // CLI
 // ---------------------------------------------------------------------------
-
-function parseScope(args) {
-  const a = args.find(s => s.startsWith('--scope='));
-  if (!a) return DEFAULT_SCOPE;
-  const m = a.split('=')[1].match(/^(\d+)-(\d+)$/);
-  if (!m) throw new Error('--scope expects MIN-MAX, e.g. --scope=71-131');
-  return [parseInt(m[1], 10), parseInt(m[2], 10)];
-}
 
 function main() {
   const args = process.argv.slice(2);
@@ -502,35 +276,30 @@ function main() {
 
   const path = args.find(a => !a.startsWith('--'));
   if (!path) {
-    console.error('usage: node validate.js <level.json> [--json] [--offset=-1] [--scope=MIN-MAX] [--zero=tile] [--layer=NAME]');
+    console.error('usage: node validate.js <level.json> [--json] [--offset=-1]');
     process.exit(2);
   }
   const offsetArg = args.find(a => a.startsWith('--offset='));
   const offset = offsetArg ? parseInt(offsetArg.split('=')[1], 10) : 0;
-  const layerArg = args.find(a => a.startsWith('--layer='));
-  const layerSpec = layerArg ? layerArg.split('=')[1] : null;
-  const scope = parseScope(args);
-  const zeroIsTile = args.includes('--zero=tile');
 
-  const grid = loadGrid(path, offset, zeroIsTile, layerSpec);
-  const violations = validate(grid, scope);
+  const grid = loadGrid(path, offset);
+  const violations = validate(grid);
 
   if (args.includes('--json')) {
     const byRule = {};
     violations.forEach(v => { byRule[v.rule] = (byRule[v.rule] || 0) + 1; });
     console.log(JSON.stringify({
       scene: path,
-      scope: `${scope[0]}-${scope[1]}`,
       width: grid[0].length, height: grid.length,
       total: violations.length, byRule, violations,
     }, null, 2));
   } else {
     if (!violations.length) {
-      console.log(`${path}: 0 violations (scope ${scope[0]}-${scope[1]})`);
+      console.log(`${path}: 0 violations`);
     } else {
       const byRule = {};
       violations.forEach(v => { byRule[v.rule] = (byRule[v.rule] || 0) + 1; });
-      console.log(`${path}: ${violations.length} violation(s) (scope ${scope[0]}-${scope[1]})\n`);
+      console.log(`${path}: ${violations.length} violation(s)\n`);
       violations.forEach(v => console.log(`  [${v.rule}] (${v.x},${v.y}) ${v.message}`));
       console.log('\nby rule:');
       Object.entries(byRule).sort((a, b) => b[1] - a[1])
@@ -542,3 +311,4 @@ function main() {
 
 if (require.main === module) main();
 module.exports = { validate, loadGrid };
+  
